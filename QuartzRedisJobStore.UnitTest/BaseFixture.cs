@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Newtonsoft.Json;
@@ -65,8 +66,8 @@ namespace QuartzRedisJobStore.UnitTest
                 InstanceId = "UnitTestInstanceId"
             };
             MockedSignaler = new Mock<ISchedulerSignaler>();
-            MockedSignaler.Setup(x => x.NotifySchedulerListenersJobDeleted(null));
-            MockedSignaler.Setup(x => x.SignalSchedulingChange(null));
+            MockedSignaler.Setup(x => x.NotifySchedulerListenersJobDeleted(It.IsAny<JobKey>(), It.IsAny<CancellationToken>()));
+            MockedSignaler.Setup(x => x.SignalSchedulingChange(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()));
             JobStore.Initialize(null, MockedSignaler.Object);
             Schema = new RedisJobStoreSchema(KeyPrefix);
             Db = ConnectionMultiplexer.Connect(JobStore.RedisConfiguration).GetDatabase();
@@ -160,8 +161,8 @@ namespace QuartzRedisJobStore.UnitTest
         /// </summary>
         /// <param name="job">IJobDetail</param>
         /// <param name="triggers">Triggers</param>
-        protected void StoreJobAndTriggers(IJobDetail job,global::Quartz.Collection.ISet<ITrigger> triggers) {
-            var dictionary = new Dictionary<IJobDetail, global::Quartz.Collection.ISet<ITrigger>> {{job, triggers}};
+        protected void StoreJobAndTriggers(IJobDetail job,ISet<ITrigger> triggers) {
+            var dictionary = new Dictionary<IJobDetail, ISet<ITrigger>> {{job, triggers}};
 
             JobStore.StoreJobsAndTriggers(dictionary,true);
         }
@@ -175,11 +176,11 @@ namespace QuartzRedisJobStore.UnitTest
         /// <param name="triggersPerGroup">number of triggers per group</param>
         /// <param name="cronExpression">unix cron expression</param>
         /// <returns>jobs and triggers</returns>
-        protected static IDictionary<IJobDetail, global::Quartz.Collection.ISet<ITrigger>> CreateJobsAndTriggers(int jobGroups, int jobsPerGroup, int triggerGroupsPerJob,
+        protected static IDictionary<IJobDetail, ISet<ITrigger>> CreateJobsAndTriggers(int jobGroups, int jobsPerGroup, int triggerGroupsPerJob,
                                              int triggersPerGroup, string cronExpression = "")
         {
 
-            var jobsAndTriggers = new Dictionary<IJobDetail, global::Quartz.Collection.ISet<ITrigger>>();
+            var jobsAndTriggers = new Dictionary<IJobDetail, ISet<ITrigger>>();
 
             for (int g = 0; g < jobGroups; g++)
             {
@@ -188,7 +189,7 @@ namespace QuartzRedisJobStore.UnitTest
                 {
                     var jobName = "jobName_" + j;
                     var job = CreateJob(jobName, jobGroup);
-                    var triggerSet = new global::Quartz.Collection.HashSet<ITrigger>();
+                    var triggerSet = new HashSet<ITrigger>();
                     for (int tg = 0; tg < triggerGroupsPerJob; tg++)
                     {
                         var triggerGroup = "triggerGroup_" + tg + "_" + j + g;

@@ -37,7 +37,7 @@ namespace QuartzRedisJobStore.UnitTest
         {
             //arrange
             ISchedulerFactory sf = new StdSchedulerFactory();
-            IScheduler sched = sf.GetScheduler();
+            IScheduler sched = sf.GetScheduler().Result;
             var job = CreateJob();
             var trigger = CreateTrigger("testTrigger1", "triggerGroup", job.Key, "0/5 * * * * ?");
             var calendar = CreateCalendar();
@@ -61,7 +61,7 @@ namespace QuartzRedisJobStore.UnitTest
         {
             //arrange
             ISchedulerFactory sf = new StdSchedulerFactory();
-            IScheduler sched = sf.GetScheduler();
+            IScheduler sched = sf.GetScheduler().Result;
             var job = CreateJob();
             var trigger = CreateTrigger("testTrigger1", "triggerGroup", job.Key, "0/5 * * * * ?");
             var calendar = CreateCalendar();

@@ -310,7 +310,7 @@ namespace QuartzRedisJobStore.JobStore
         ///             misfire instruction will be applied.
         /// </para>
         /// </summary>
-        public override global::Quartz.Collection.ISet<string> ResumeJobs(GroupMatcher<JobKey> matcher)
+        public override ISet<string> ResumeJobs(GroupMatcher<JobKey> matcher)
         {
             var resumedJobGroups = new List<string>();
 
@@ -346,7 +346,7 @@ namespace QuartzRedisJobStore.JobStore
                 }
             }
 
-            return new global::Quartz.Collection.HashSet<string>(resumedJobGroups);
+            return new HashSet<string>(resumedJobGroups);
         }
 
         /// <summary>
@@ -816,9 +816,9 @@ namespace QuartzRedisJobStore.JobStore
         /// </summary>
         /// <param name="matcher"/>
         /// <returns/>
-        public override global::Quartz.Collection.ISet<JobKey> JobKeys(GroupMatcher<JobKey> matcher)
+        public override ISet<JobKey> JobKeys(GroupMatcher<JobKey> matcher)
         {
-            var jobKeys = new global::Quartz.Collection.HashSet<JobKey>();
+            var jobKeys = new HashSet<JobKey>();
 
             if (matcher.CompareWithOperator.Equals(StringOperator.Equality))
             {
@@ -855,9 +855,9 @@ namespace QuartzRedisJobStore.JobStore
         ///             zero-length array (not <see langword="null"/>).
         /// </para>
         /// </summary>
-        public override global::Quartz.Collection.ISet<TriggerKey> TriggerKeys(GroupMatcher<TriggerKey> matcher)
+        public override ISet<TriggerKey> TriggerKeys(GroupMatcher<TriggerKey> matcher)
         {
-            var triggerKeys = new global::Quartz.Collection.HashSet<TriggerKey>();
+            var triggerKeys = new HashSet<TriggerKey>();
 
             if (matcher.CompareWithOperator.Equals(StringOperator.Equality))
             {

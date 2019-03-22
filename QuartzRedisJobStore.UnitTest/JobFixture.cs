@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Quartz;
 using Quartz.Impl.Matchers;
@@ -150,7 +151,7 @@ namespace QuartzRedisJobStore.UnitTest
             var job = CreateJob("job1", "group1");
             var trigger1 = CreateTrigger("trigger1", "triggerGroup1", job.Key);
             var trigger2 = CreateTrigger("trigger2", "triggerGroup2", job.Key);
-            var triggerSet = new global::Quartz.Collection.HashSet<ITrigger> { trigger1, trigger2 };
+            var triggerSet = new HashSet<ITrigger> { trigger1, trigger2 };
             this.StoreJobAndTriggers(job, triggerSet);
 
             //act
@@ -298,7 +299,7 @@ namespace QuartzRedisJobStore.UnitTest
             var job = CreateJob("pausedJob", "pausedGroup");
             var trigger1 = CreateTrigger("trigger1", "triggerGroup1", job.Key);
             var trigger2 = CreateTrigger("trigger2", "triggerGroup2", job.Key);
-            var triggerSet = new global::Quartz.Collection.HashSet<ITrigger> { trigger1, trigger2 };
+            var triggerSet = new HashSet<ITrigger> { trigger1, trigger2 };
             this.StoreJobAndTriggers(job, triggerSet);
 
             //act
@@ -355,7 +356,7 @@ namespace QuartzRedisJobStore.UnitTest
             var job = CreateJob("job1", "startGroup");
             var trigger1 = CreateTrigger("trigger1", "triggerGroup1", job.Key);
             var trigger2 = CreateTrigger("trigger2", "triggerGroup2", job.Key);
-            var triggerSet = new global::Quartz.Collection.HashSet<ITrigger> { trigger1, trigger2 };
+            var triggerSet = new HashSet<ITrigger> { trigger1, trigger2 };
             this.StoreJobAndTriggers(job, triggerSet);
 
             //act
@@ -377,7 +378,7 @@ namespace QuartzRedisJobStore.UnitTest
             var job = CreateJob("job1", "GroupEnds");
             var trigger1 = CreateTrigger("trigger1", "triggerGroup1", job.Key);
             var trigger2 = CreateTrigger("trigger2", "triggerGroup2", job.Key);
-            var triggerSet = new global::Quartz.Collection.HashSet<ITrigger> { trigger1, trigger2 };
+            var triggerSet = new HashSet<ITrigger> { trigger1, trigger2 };
             this.StoreJobAndTriggers(job, triggerSet);
 
             //act
@@ -399,7 +400,7 @@ namespace QuartzRedisJobStore.UnitTest
             var job = CreateJob("job1", "GroupContainsfoobar");
             var trigger1 = CreateTrigger("trigger1", "triggerGroup1", job.Key);
             var trigger2 = CreateTrigger("trigger2", "triggerGroup2", job.Key);
-            var triggerSet = new global::Quartz.Collection.HashSet<ITrigger> { trigger1, trigger2 };
+            var triggerSet = new HashSet<ITrigger> { trigger1, trigger2 };
             this.StoreJobAndTriggers(job, triggerSet);
 
             //act
@@ -421,7 +422,7 @@ namespace QuartzRedisJobStore.UnitTest
             var job = CreateJob("job1", "jobGroup1");
             var trigger1 = CreateTrigger("trigger1", "triggerGroup1", job.Key);
             var trigger2 = CreateTrigger("trigger2", "triggerGroup2", job.Key);
-            var triggerSet = new global::Quartz.Collection.HashSet<ITrigger> { trigger1, trigger2 };
+            var triggerSet = new HashSet<ITrigger> { trigger1, trigger2 };
             this.StoreJobAndTriggers(job, triggerSet);
             JobStore.PauseJob(job.Key);
 
@@ -445,7 +446,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.StoreJobsAndTriggers(jobsAndTriggers, false);
             var pausedGroup = jobsAndTriggers.Keys.First().Key.Group;
             JobStore.PauseJobs(GroupMatcher<JobKey>.GroupEquals(pausedGroup));
-            global::Quartz.Collection.ISet<ITrigger> triggers = new global::Quartz.Collection.HashSet<ITrigger>();
+            ISet<ITrigger> triggers = new HashSet<ITrigger>();
             jobsAndTriggers.TryGetValue(jobsAndTriggers.Keys.First(), out triggers);
 
             //act
@@ -473,7 +474,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.StoreJobsAndTriggers(jobsAndTriggers, false);
 
             JobStore.PauseJobs(GroupMatcher<JobKey>.GroupEndsWith("_1"));
-            global::Quartz.Collection.ISet<ITrigger> triggers = new global::Quartz.Collection.HashSet<ITrigger>();
+            ISet<ITrigger> triggers = new HashSet<ITrigger>();
             jobsAndTriggers.TryGetValue(jobsAndTriggers.Keys.First(), out triggers);
 
             //act

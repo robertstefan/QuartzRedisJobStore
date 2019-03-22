@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Spi;
@@ -65,7 +68,7 @@ namespace QuartzRedisJobStore.UnitTest
             //assert
             Assert.IsNull(JobStore.RetrieveTrigger(_trigger1.Key));
 
-            MockedSignaler.Verify(x => x.SignalSchedulingChange(null));
+            MockedSignaler.Verify(x => x.SignalSchedulingChange(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()));
         }
 
         /// <summary>
@@ -79,7 +82,7 @@ namespace QuartzRedisJobStore.UnitTest
 
             //assert
             Assert.AreEqual(TriggerState.Error, JobStore.GetTriggerState(_trigger1.Key));
-            MockedSignaler.Verify(x => x.SignalSchedulingChange(null));
+            MockedSignaler.Verify(x => x.SignalSchedulingChange(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()));
         }
 
         /// <summary>
@@ -94,7 +97,7 @@ namespace QuartzRedisJobStore.UnitTest
             //assert
             Assert.AreEqual(TriggerState.Error, JobStore.GetTriggerState(_trigger1.Key));
             Assert.AreEqual(TriggerState.Error, JobStore.GetTriggerState(_trigger2.Key));
-            MockedSignaler.Verify(x => x.SignalSchedulingChange(null));
+            MockedSignaler.Verify(x => x.SignalSchedulingChange(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()));
         }
 
         /// <summary>
@@ -109,7 +112,7 @@ namespace QuartzRedisJobStore.UnitTest
             //assert
             Assert.AreEqual(TriggerState.Complete, JobStore.GetTriggerState(_trigger1.Key));
             Assert.AreEqual(TriggerState.Complete, JobStore.GetTriggerState(_trigger2.Key));
-            MockedSignaler.Verify(x => x.SignalSchedulingChange(null));
+            MockedSignaler.Verify(x => x.SignalSchedulingChange(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()));
         }
 
         /// <summary>

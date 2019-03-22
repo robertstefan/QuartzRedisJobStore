@@ -254,7 +254,7 @@ namespace QuartzRedisJobStore.JobStore
         ///             misfire instruction will be applied.
         /// </para>
         /// </summary>
-        public abstract global::Quartz.Collection.ISet<string> ResumeJobs(GroupMatcher<JobKey> matcher);
+        public abstract ISet<string> ResumeJobs(GroupMatcher<JobKey> matcher);
 
 
         /// <summary>
@@ -453,7 +453,7 @@ namespace QuartzRedisJobStore.JobStore
 
             do
             {
-                var acquiredJobHashKeysForNoConcurrentExec = new global::Quartz.Collection.HashSet<string>();
+                var acquiredJobHashKeysForNoConcurrentExec = new HashSet<string>();
 
                 var score = ToUnixTimeMilliseconds(noLaterThan.Add(timeWindow));
 
@@ -602,12 +602,12 @@ namespace QuartzRedisJobStore.JobStore
         /// Gets the paused trigger groups.
         /// </summary>
         /// <returns/>
-        public global::Quartz.Collection.ISet<string> GetPausedTriggerGroups()
+        public ISet<string> GetPausedTriggerGroups()
         {
             RedisValue[] triggerGroupSetKeys =
                 Db.SetMembers(RedisJobStoreSchema.PausedTriggerGroupsSetKey());
 
-            var groups = new global::Quartz.Collection.HashSet<string>();
+            var groups = new HashSet<string>();
 
             foreach (var triggerGroupSetKey in triggerGroupSetKeys)
             {
@@ -683,7 +683,7 @@ namespace QuartzRedisJobStore.JobStore
         /// </summary>
         /// <param name="matcher"/>
         /// <returns/>
-        public abstract global::Quartz.Collection.ISet<JobKey> JobKeys(GroupMatcher<JobKey> matcher);
+        public abstract ISet<JobKey> JobKeys(GroupMatcher<JobKey> matcher);
 
         /// <summary>
         /// Get the names of all of the <see cref="T:Quartz.ITrigger"/>s
@@ -693,7 +693,7 @@ namespace QuartzRedisJobStore.JobStore
         ///             zero-length array (not <see langword="null"/>).
         /// </para>
         /// </summary>
-        public abstract global::Quartz.Collection.ISet<TriggerKey> TriggerKeys(GroupMatcher<TriggerKey> matcher);
+        public abstract ISet<TriggerKey> TriggerKeys(GroupMatcher<TriggerKey> matcher);
 
         /// <summary>
         /// Get the names of all of the <see cref="T:Quartz.IJob"/>
