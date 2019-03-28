@@ -1,9 +1,9 @@
-﻿using System;
-using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using Quartz;
 using QuartzRedisJobStore.JobStore;
+using System;
+using System.Linq;
 
 namespace QuartzRedisJobStore.UnitTest
 {
@@ -39,23 +39,24 @@ namespace QuartzRedisJobStore.UnitTest
         /// store a calendar
         /// </summary>
         [TestMethod]
-        public void StoreCalendarSuccesfully() {
+        public void StoreCalendarSuccesfully()
+        {
             //arrange
-            var calendar = CreateCalendar();
-            var calendarHashKey = Schema.CalendarHashKey(CalendarName);
+            ICalendar calendar = CreateCalendar();
+            string calendarHashKey = Schema.CalendarHashKey(CalendarName);
 
             //act
-            JobStore.StoreCalendar(CalendarName,calendar,false,false);
-            var calendarProperties = Db.HashGetAll(calendarHashKey);
-            var serializedCalendar = (from hashEntry in calendarProperties
-                                      where hashEntry.Name == RedisJobStoreSchema.CalendarSerialized
-                                      select hashEntry.Value).FirstOrDefault();
+            JobStore.StoreCalendar(CalendarName, calendar, false, false);
+            StackExchange.Redis.HashEntry[] calendarProperties = Db.HashGetAll(calendarHashKey);
+            StackExchange.Redis.RedisValue serializedCalendar = (from hashEntry in calendarProperties
+                                                                 where hashEntry.Name == RedisJobStoreSchema.CalendarSerialized
+                                                                 select hashEntry.Value).FirstOrDefault();
 
-            var retrievedCalendar = JsonConvert.DeserializeObject(serializedCalendar, _serializerSettings) as ICalendar;
+            ICalendar retrievedCalendar = JsonConvert.DeserializeObject(serializedCalendar, _serializerSettings) as ICalendar;
 
             //assert
             Assert.IsNotNull(retrievedCalendar);
-            Assert.AreEqual(retrievedCalendar.Description,calendar.Description);
+            Assert.AreEqual(retrievedCalendar.Description, calendar.Description);
 
         }
 
@@ -64,18 +65,19 @@ namespace QuartzRedisJobStore.UnitTest
         /// the original one will not be overriden.
         /// </summary>
         [TestMethod]
-        public void StoreCalendar_WithoutReplacingExisting_NoOverride() {
+        public void StoreCalendar_WithoutReplacingExisting_NoOverride()
+        {
             //arrange
-            var calendar1 = CreateCalendar();
-            var calendar2 = CreateCalendar("another week days only");
+            ICalendar calendar1 = CreateCalendar();
+            ICalendar calendar2 = CreateCalendar("another week days only");
 
             //act
-            JobStore.StoreCalendar(CalendarName,calendar1,false,false);
-            JobStore.StoreCalendar(CalendarName,calendar2,false,false);
-            var retrievedCalendar = JobStore.RetrieveCalendar(CalendarName);
+            JobStore.StoreCalendar(CalendarName, calendar1, false, false);
+            JobStore.StoreCalendar(CalendarName, calendar2, false, false);
+            ICalendar retrievedCalendar = JobStore.RetrieveCalendar(CalendarName).Result;
 
             //assert    
-            Assert.AreEqual(retrievedCalendar.Description,calendar1.Description);
+            Assert.AreEqual(retrievedCalendar.Description, calendar1.Description);
         }
 
         /// <summary>
@@ -86,13 +88,13 @@ namespace QuartzRedisJobStore.UnitTest
         public void StoreCalendar_WithReplacingExisting_OverrideSuccessfully()
         {
             //arrange
-            var calendar1 = CreateCalendar();
-            var calendar2 = CreateCalendar("another week days only");
+            ICalendar calendar1 = CreateCalendar();
+            ICalendar calendar2 = CreateCalendar("another week days only");
 
             //act
             JobStore.StoreCalendar(CalendarName, calendar1, false, false);
             JobStore.StoreCalendar(CalendarName, calendar2, true, false);
-            var retrievedCalendar = JobStore.RetrieveCalendar(CalendarName);
+            ICalendar retrievedCalendar = JobStore.RetrieveCalendar(CalendarName).Result;
 
             //assert    
             Assert.AreEqual(retrievedCalendar.Description, calendar2.Description);
@@ -102,32 +104,34 @@ namespace QuartzRedisJobStore.UnitTest
         /// retrieve a calendar
         /// </summary>
         [TestMethod]
-        public void RetrieveCalendarSuccessfully() {
+        public void RetrieveCalendarSuccessfully()
+        {
             //arrange
-            var calendar = CreateCalendar();
+            ICalendar calendar = CreateCalendar();
             JobStore.StoreCalendar(CalendarName, calendar, true, false);
 
             //act
-            var retrievedCalendar = JobStore.RetrieveCalendar(CalendarName);
+            ICalendar retrievedCalendar = JobStore.RetrieveCalendar(CalendarName).Result;
 
             //assert
-            Assert.AreEqual(calendar.Description,retrievedCalendar.Description);
-            var utcNow = new DateTimeOffset(DateTime.UtcNow);
-            Assert.AreEqual(calendar.GetNextIncludedTimeUtc(utcNow),retrievedCalendar.GetNextIncludedTimeUtc(utcNow));
+            Assert.AreEqual(calendar.Description, retrievedCalendar.Description);
+            DateTimeOffset utcNow = new DateTimeOffset(DateTime.UtcNow);
+            Assert.AreEqual(calendar.GetNextIncludedTimeUtc(utcNow), retrievedCalendar.GetNextIncludedTimeUtc(utcNow));
         }
 
         /// <summary>
         /// get total number of calendars in the store
         /// </summary>
         [TestMethod]
-        public void GetNumberOfCalendarSuccessfully() {
+        public void GetNumberOfCalendarSuccessfully()
+        {
             //arrange
             JobStore.StoreCalendar("cal1", CreateCalendar(), true, false);
             JobStore.StoreCalendar("cal2", CreateCalendar(), true, false);
             JobStore.StoreCalendar("cal3", CreateCalendar(), true, false);
 
             //act
-            var numbers = JobStore.GetNumberOfCalendars();
+            int numbers = JobStore.GetNumberOfCalendars().Result;
 
             //assert
             Assert.IsTrue(numbers == 3);
@@ -137,29 +141,33 @@ namespace QuartzRedisJobStore.UnitTest
         /// remove a calendar
         /// </summary>
         [TestMethod]
-        public void RemoveCalendarSuccessfully() {
+        public void RemoveCalendarSuccessfully()
+        {
             //arrange
-            JobStore.StoreCalendar(CalendarName,CreateCalendar(),false,false);
-            
+            JobStore.StoreCalendar(CalendarName, CreateCalendar(), false, false);
+
             //act
-            var result = JobStore.RemoveCalendar(CalendarName);
+            bool result = JobStore.RemoveCalendar(CalendarName).Result;
 
             //assert
             Assert.IsTrue(result);
-            Assert.IsNull(JobStore.RetrieveCalendar(CalendarName));
+
+            ICalendar cal = JobStore.RetrieveCalendar(CalendarName).Result;
+            Assert.IsNull(cal);
         }
 
         /// <summary>
         /// Get all the calendar names in the store
         /// </summary>
         [TestMethod]
-        public void GetCalendarNamesSuccessfully() {
+        public void GetCalendarNamesSuccessfully()
+        {
             //arrange
-            JobStore.StoreCalendar("cal1",CreateCalendar(),false,false);
+            JobStore.StoreCalendar("cal1", CreateCalendar(), false, false);
             JobStore.StoreCalendar("cal2", CreateCalendar(), false, false);
 
             //act
-            var result = JobStore.GetCalendarNames();
+            System.Collections.Generic.IReadOnlyCollection<string> result = JobStore.GetCalendarNames().Result;
 
             //assert
             Assert.IsTrue(result.Count == 2);
@@ -169,12 +177,13 @@ namespace QuartzRedisJobStore.UnitTest
         /// Calendar could not be removed then there are triggers associated with it. 
         /// </summary>
         [TestMethod, ExpectedException(typeof(JobPersistenceException))]
-        public void RemoveCalendar_WhenActiveTriggerAssociatedWith_Unsuccessfully() {
+        public void RemoveCalendar_WhenActiveTriggerAssociatedWith_Unsuccessfully()
+        {
             //arrange
-            var job = CreateJob();
-            JobStore.StoreJob(job,false);
-            var trigger = CreateTrigger("trigger", "triggerGroup", job.Key);
-            JobStore.StoreTrigger(trigger,false);
+            IJobDetail job = CreateJob();
+            JobStore.StoreJob(job, false);
+            Quartz.Spi.IOperableTrigger trigger = CreateTrigger("trigger", "triggerGroup", job.Key);
+            JobStore.StoreTrigger(trigger, false);
 
             //act
             JobStore.RemoveCalendar(trigger.CalendarName);

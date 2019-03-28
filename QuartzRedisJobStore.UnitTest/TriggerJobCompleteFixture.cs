@@ -138,7 +138,7 @@ namespace QuartzRedisJobStore.UnitTest
 
             //act
             JobStore.TriggeredJobComplete(trigger1, job, SchedulerInstruction.SetTriggerComplete);
-            var retrievedJob = JobStore.RetrieveJob(job.Key);
+            var retrievedJob = JobStore.RetrieveJob(job.Key).Result;
 
             //assert    
             Assert.AreEqual(retrievedJob.JobDataMap["test"], "test");

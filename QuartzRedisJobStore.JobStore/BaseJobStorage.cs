@@ -213,7 +213,7 @@ namespace QuartzRedisJobStore.JobStore
         /// </para>
         /// </summary>
         /// <seealso cref="T:System.String"/>
-        public abstract IList<string> PauseJobs(GroupMatcher<JobKey> matcher);
+        public abstract IReadOnlyCollection<string> PauseJobs(GroupMatcher<JobKey> matcher);
 
         /// <summary>
         /// Resume (un-pause) the <see cref="T:Quartz.IJob"/> with the
@@ -254,7 +254,7 @@ namespace QuartzRedisJobStore.JobStore
         ///             misfire instruction will be applied.
         /// </para>
         /// </summary>
-        public abstract ISet<string> ResumeJobs(GroupMatcher<JobKey> matcher);
+        public abstract IReadOnlyCollection<string> ResumeJobs(GroupMatcher<JobKey> matcher);
 
 
         /// <summary>
@@ -297,7 +297,7 @@ namespace QuartzRedisJobStore.JobStore
         ///             <see cref="T:Quartz.ITrigger"/>'s misfire instruction will be applied.
         /// </para>
         /// </summary>
-        public abstract IList<string> ResumeTriggers(GroupMatcher<TriggerKey> matcher);
+        public abstract IReadOnlyCollection<string> ResumeTriggers(GroupMatcher<TriggerKey> matcher);
 
         /// <summary>
         /// Pause the <see cref="T:Quartz.ITrigger"/> with the given key.
@@ -443,7 +443,7 @@ namespace QuartzRedisJobStore.JobStore
         ///             milliseconds.</param><param name="maxCount"/><param name="timeWindow"/>
         /// <returns/>
         /// <seealso cref="T:Quartz.ITrigger"/>
-        public IList<IOperableTrigger> AcquireNextTriggers(DateTimeOffset noLaterThan, int maxCount, TimeSpan timeWindow)
+        public IReadOnlyCollection<IOperableTrigger> AcquireNextTriggers(DateTimeOffset noLaterThan, int maxCount, TimeSpan timeWindow)
         {
             ReleaseTriggers();
 
@@ -544,7 +544,7 @@ namespace QuartzRedisJobStore.JobStore
         ///             state.  Preference is to return an empty list if none of the triggers
         ///             could be fired.
         /// </returns>
-        public abstract IList<TriggerFiredResult> TriggersFired(IList<IOperableTrigger> triggers);
+        public abstract IReadOnlyCollection<TriggerFiredResult> TriggersFired(IReadOnlyCollection<IOperableTrigger> triggers);
 
         /// <summary>
         /// Inform the <see cref="T:Quartz.Spi.IJobStore"/> that the scheduler has completed the
@@ -590,7 +590,7 @@ namespace QuartzRedisJobStore.JobStore
         /// <remarks>
         /// If there are no matches, a zero-length array should be returned.
         /// </remarks>
-        public IList<IOperableTrigger> GetTriggersForJob(JobKey jobKey)
+        public IReadOnlyCollection<IOperableTrigger> GetTriggersForJob(JobKey jobKey)
         {
             var jobTriggerSetKey = RedisJobStoreSchema.JobTriggersSetKey(jobKey);
             var triggerHashKeys = Db.SetMembers(jobTriggerSetKey);
@@ -602,7 +602,7 @@ namespace QuartzRedisJobStore.JobStore
         /// Gets the paused trigger groups.
         /// </summary>
         /// <returns/>
-        public ISet<string> GetPausedTriggerGroups()
+        public IReadOnlyCollection<string> GetPausedTriggerGroups()
         {
             RedisValue[] triggerGroupSetKeys =
                 Db.SetMembers(RedisJobStoreSchema.PausedTriggerGroupsSetKey());
@@ -683,7 +683,7 @@ namespace QuartzRedisJobStore.JobStore
         /// </summary>
         /// <param name="matcher"/>
         /// <returns/>
-        public abstract ISet<JobKey> JobKeys(GroupMatcher<JobKey> matcher);
+        public abstract IReadOnlyCollection<JobKey> JobKeys(GroupMatcher<JobKey> matcher);
 
         /// <summary>
         /// Get the names of all of the <see cref="T:Quartz.ITrigger"/>s
@@ -693,7 +693,7 @@ namespace QuartzRedisJobStore.JobStore
         ///             zero-length array (not <see langword="null"/>).
         /// </para>
         /// </summary>
-        public abstract ISet<TriggerKey> TriggerKeys(GroupMatcher<TriggerKey> matcher);
+        public abstract IReadOnlyCollection<TriggerKey> TriggerKeys(GroupMatcher<TriggerKey> matcher);
 
         /// <summary>
         /// Get the names of all of the <see cref="T:Quartz.IJob"/>
@@ -703,7 +703,7 @@ namespace QuartzRedisJobStore.JobStore
         ///             array (not <see langword="null"/>).
         /// </para>
         /// </summary>
-        public IList<string> JobGroupNames()
+        public IReadOnlyCollection<string> JobGroupNames()
         {
             RedisValue[] groupsSet = Db.SetMembers(RedisJobStoreSchema.JobGroupsSetKey());
 
@@ -718,7 +718,7 @@ namespace QuartzRedisJobStore.JobStore
         ///             array (not <see langword="null"/>).
         /// </para>
         /// </summary>
-        public IList<string> TriggerGroupNames()
+        public IReadOnlyCollection<string> TriggerGroupNames()
         {
             RedisValue[] groupsSet = Db.SetMembers(RedisJobStoreSchema.TriggerGroupsSetKey());
 
@@ -733,7 +733,7 @@ namespace QuartzRedisJobStore.JobStore
         ///             a zero-length array (not <see langword="null"/>).
         /// </para>
         /// </summary>
-        public IList<string> CalendarNames()
+        public IReadOnlyCollection<string> CalendarNames()
         {
             RedisValue[] calendarsSet = Db.SetMembers(RedisJobStoreSchema.CalendarsSetKey());
 
@@ -755,7 +755,7 @@ namespace QuartzRedisJobStore.JobStore
         ///             pause on any new triggers that are added to the group while the group is
         ///             paused.
         /// </remarks>
-        public abstract IList<string> PauseTriggers(GroupMatcher<TriggerKey> matcher);
+        public abstract IReadOnlyCollection<string> PauseTriggers(GroupMatcher<TriggerKey> matcher);
 
 
         /// <summary>

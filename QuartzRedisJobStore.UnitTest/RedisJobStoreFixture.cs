@@ -74,8 +74,11 @@ namespace QuartzRedisJobStore.UnitTest
             sched.Shutdown();
 
             //assert
-            Assert.IsNull(JobStore.RetrieveJob(job.Key));
-            Assert.IsNull(JobStore.RetrieveTrigger(trigger.Key));
+            IJobDetail jobDetail = JobStore.RetrieveJob(job.Key).Result;
+            Assert.IsNull(jobDetail);
+
+            var _trigger = JobStore.RetrieveTrigger(trigger.Key).Result;
+            Assert.IsNull(_trigger);
 
         }
     }

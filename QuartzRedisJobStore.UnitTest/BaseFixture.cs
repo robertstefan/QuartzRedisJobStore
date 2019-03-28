@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Configuration;
 using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -161,10 +162,10 @@ namespace QuartzRedisJobStore.UnitTest
         /// </summary>
         /// <param name="job">IJobDetail</param>
         /// <param name="triggers">Triggers</param>
-        protected void StoreJobAndTriggers(IJobDetail job,ISet<ITrigger> triggers) {
-            var dictionary = new Dictionary<IJobDetail, ISet<ITrigger>> {{job, triggers}};
+        protected void StoreJobAndTriggers(IJobDetail job, ISet<ITrigger> triggers) {
+            IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>> dictionary = new Dictionary<IJobDetail, IReadOnlyCollection<ITrigger>> {{job, new ReadOnlyCollection<ITrigger>(triggers) }};
 
-            JobStore.StoreJobsAndTriggers(dictionary,true);
+            JobStore.StoreJobsAndTriggers(dictionary, true);
         }
 
         /// <summary>

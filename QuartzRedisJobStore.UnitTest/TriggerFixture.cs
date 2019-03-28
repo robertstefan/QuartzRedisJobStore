@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Quartz;
@@ -79,7 +80,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.StoreTrigger(trigger1, false);
 
             //assert
-            var retrievedTrigger = (CronTriggerImpl)JobStore.RetrieveTrigger(trigger.Key);
+            var retrievedTrigger = (CronTriggerImpl)JobStore.RetrieveTrigger(trigger.Key).Result;
             Assert.AreEqual(retrievedTrigger.CronExpressionString, "0 0 0 * * ?");
         }
 
@@ -101,7 +102,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.StoreTrigger(trigger1, true);
 
             //assert
-            var retrievedTrigger = (CronTriggerImpl)JobStore.RetrieveTrigger(trigger.Key);
+            var retrievedTrigger = (CronTriggerImpl)JobStore.RetrieveTrigger(trigger.Key).Result;
             Assert.AreEqual(retrievedTrigger.CronExpressionString, "0 0 12 * * ?");
         }
 
@@ -120,7 +121,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.StoreTrigger(trigger, true);
 
             //assert
-            var retrievedTrigger = (CronTriggerImpl)JobStore.RetrieveTrigger(trigger.Key);
+            var retrievedTrigger = (CronTriggerImpl)JobStore.RetrieveTrigger(trigger.Key).Result;
             Assert.AreEqual(retrievedTrigger.CronExpressionString, "0 0 0 * * ?");
         }
 
@@ -225,7 +226,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.StoreTrigger(trigger2, false);
 
             //act
-            var triggers = JobStore.GetTriggersForJob(job.Key);
+            var triggers = JobStore.GetTriggersForJob(job.Key).Result;
 
             //assert
             Assert.IsTrue(triggers.Count == 2);
@@ -239,7 +240,7 @@ namespace QuartzRedisJobStore.UnitTest
         {
             //arrange
             var jobsAndTriggers = CreateJobsAndTriggers(2, 1, 1, 2);
-            JobStore.StoreJobsAndTriggers(jobsAndTriggers, false);
+            JobStore.StoreJobsAndTriggers(jobsAndTriggers as IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>>, false);
 
             //act
             var result = JobStore.GetNumberOfTriggers();
@@ -262,7 +263,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.StoreTrigger(CreateTrigger("trigger4", "triggerGroup1", job.Key), false);
 
             //act
-            var triggerKeys = JobStore.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupEquals("triggerGroup"));
+            var triggerKeys = JobStore.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupEquals("triggerGroup")).Result;
 
             //assert
             Assert.IsTrue(triggerKeys.Count == 2);
@@ -283,7 +284,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.StoreTrigger(CreateTrigger("trigger4", "tGroup1", job.Key), false);
 
             //act
-            var triggerKeys = JobStore.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupStartsWith("tGroup"));
+            var triggerKeys = JobStore.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupStartsWith("tGroup")).Result;
 
             //assert
             Assert.IsTrue(triggerKeys.Count == 4);
@@ -304,7 +305,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.StoreTrigger(CreateTrigger("trigger4", "triggerGroup1", job.Key), false);
 
             //act
-            var triggerKeys = JobStore.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupEndsWith("1"));
+            var triggerKeys = JobStore.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupEndsWith("1")).Result;
 
             //assert
             Assert.IsTrue(triggerKeys.Count == 2);
@@ -325,7 +326,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.StoreTrigger(CreateTrigger("trigger4", "triggerfoobarGroup1", job.Key), false);
 
             //act
-            var triggerKeys = JobStore.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupContains("foobar"));
+            var triggerKeys = JobStore.GetTriggerKeys(GroupMatcher<TriggerKey>.GroupContains("foobar")).Result;
 
             //assert
             Assert.IsTrue(triggerKeys.Count == 2);
@@ -339,10 +340,10 @@ namespace QuartzRedisJobStore.UnitTest
         {
             //arrange
             var jobsAndTriggers = CreateJobsAndTriggers(2, 1, 1, 2);
-            JobStore.StoreJobsAndTriggers(jobsAndTriggers, false);
+            JobStore.StoreJobsAndTriggers((IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>>)jobsAndTriggers, false);
 
             //act
-            var result = JobStore.GetTriggerGroupNames();
+            var result = JobStore.GetTriggerGroupNames().Result;
 
             //assert
             Assert.AreEqual(result.Count, 2);
@@ -380,7 +381,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.StoreTrigger(CreateTrigger("trigger4", "triggerfoobarGroup1", job.Key), true);
 
             //act
-            var pausedGroups = JobStore.PauseTriggers(GroupMatcher<TriggerKey>.GroupEquals("triggerfoobarGroup1"));
+            var pausedGroups = JobStore.PauseTriggers(GroupMatcher<TriggerKey>.GroupEquals("triggerfoobarGroup1")).Result;
 
             //assert
             Assert.IsTrue(pausedGroups.Count == 1);
@@ -404,7 +405,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.StoreTrigger(CreateTrigger("trigger4", "triggerfoobarGroup1", job.Key), true);
 
             //act
-            var pausedGroups = JobStore.PauseTriggers(GroupMatcher<TriggerKey>.GroupStartsWith("triggerfooba"));
+            var pausedGroups = JobStore.PauseTriggers(GroupMatcher<TriggerKey>.GroupStartsWith("triggerfooba")).Result;
 
             //assert
             Assert.IsTrue(pausedGroups.Count == 1);
@@ -428,7 +429,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.StoreTrigger(CreateTrigger("trigger4", "triggerfoobarGroup1", job.Key), true);
 
             //act
-            var pausedGroups = JobStore.PauseTriggers(GroupMatcher<TriggerKey>.GroupEndsWith("1"));
+            var pausedGroups = JobStore.PauseTriggers(GroupMatcher<TriggerKey>.GroupEndsWith("1")).Result;
 
             //assert
             Assert.IsTrue(pausedGroups.Count == 1);
@@ -452,7 +453,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.StoreTrigger(CreateTrigger("trigger4", "triggerfoobarGroup1", job.Key), true);
 
             //act
-            var pausedGroups = JobStore.PauseTriggers(GroupMatcher<TriggerKey>.GroupContains("foobar"));
+            var pausedGroups = JobStore.PauseTriggers(GroupMatcher<TriggerKey>.GroupContains("foobar")).Result;
 
             //assert
             Assert.IsTrue(pausedGroups.Count == 1);
@@ -504,7 +505,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.PauseTriggers(GroupMatcher<TriggerKey>.GroupEquals("triggerGroup"));
 
             //act
-            var resumedGroups = JobStore.ResumeTriggers(GroupMatcher<TriggerKey>.GroupEquals("triggerGroup"));
+            var resumedGroups = JobStore.ResumeTriggers(GroupMatcher<TriggerKey>.GroupEquals("triggerGroup")).Result;
 
             //assert
             Assert.IsTrue(resumedGroups.Count == 1);
@@ -535,7 +536,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.PauseTriggers(GroupMatcher<TriggerKey>.GroupStartsWith("trigger1"));
 
             //act
-            var resumedGroups = JobStore.ResumeTriggers(GroupMatcher<TriggerKey>.GroupStartsWith("trigger1"));
+            var resumedGroups = JobStore.ResumeTriggers(GroupMatcher<TriggerKey>.GroupStartsWith("trigger1")).Result;
 
             //assert
             Assert.IsTrue(resumedGroups.Count == 1);
@@ -566,7 +567,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.PauseTriggers(GroupMatcher<TriggerKey>.GroupEndsWith("Group1"));
 
             //act
-            var resumedGroups = JobStore.ResumeTriggers(GroupMatcher<TriggerKey>.GroupEndsWith("Group1"));
+            var resumedGroups = JobStore.ResumeTriggers(GroupMatcher<TriggerKey>.GroupEndsWith("Group1")).Result;
 
             //assert
             Assert.IsTrue(resumedGroups.Count == 1);
@@ -597,7 +598,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.PauseTriggers(GroupMatcher<TriggerKey>.GroupContains("foobar"));
 
             //act
-            var resumedGroups = JobStore.ResumeTriggers(GroupMatcher<TriggerKey>.GroupContains("foobar"));
+            var resumedGroups = JobStore.ResumeTriggers(GroupMatcher<TriggerKey>.GroupContains("foobar")).Result;
 
             //assert
             Assert.IsTrue(resumedGroups.Count == 1);
@@ -621,7 +622,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.PauseTriggers(GroupMatcher<TriggerKey>.GroupEquals("triggerGroup"));
 
             //act
-            var pausedGroups = JobStore.GetPausedTriggerGroups();
+            var pausedGroups = JobStore.GetPausedTriggerGroups().Result;
 
             //Assert
             Assert.IsTrue(pausedGroups.Count == 1);
@@ -635,7 +636,7 @@ namespace QuartzRedisJobStore.UnitTest
         {
             //arrange
             var jobsAndTriggers = CreateJobsAndTriggers(2, 2, 2, 2);
-            JobStore.StoreJobsAndTriggers(jobsAndTriggers, false);
+            JobStore.StoreJobsAndTriggers((IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>>)jobsAndTriggers, false);
 
             //act
             JobStore.PauseAll();
@@ -659,7 +660,7 @@ namespace QuartzRedisJobStore.UnitTest
         {
             //arrange
             var jobsAndTriggers = CreateJobsAndTriggers(2, 1, 1, 2);
-            JobStore.StoreJobsAndTriggers(jobsAndTriggers, false);
+            JobStore.StoreJobsAndTriggers((IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>> )jobsAndTriggers, false);
             JobStore.PauseAll();
 
             //act
@@ -692,7 +693,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.StoreTrigger(CreateTrigger("trigger4", "triggerfoobarGroup2", job.Key, "* * * * * ?", calendarName), true);
 
             //act
-            var acquiredTriggers = JobStore.AcquireNextTriggers(new DateTimeOffset(DateTime.UtcNow), 20, TimeSpan.FromMilliseconds(1000));
+            var acquiredTriggers = JobStore.AcquireNextTriggers(new DateTimeOffset(DateTime.UtcNow), 20, TimeSpan.FromMilliseconds(1000)).Result;
 
             //assert
             Assert.IsTrue(acquiredTriggers.Count == 4);
@@ -719,10 +720,10 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.StoreTrigger(CreateTrigger("trigger2", "triggerGroup", job.Key, "* * * * * ?", calendarName), true);
             JobStore.StoreTrigger(CreateTrigger("trigger3", "triggerfoobarGroup1", job.Key, "* * * * * ?", calendarName), true);
             JobStore.StoreTrigger(CreateTrigger("trigger4", "triggerfoobarGroup2", job.Key, "* * * * * ?", calendarName), true);
-            var acquiredTriggers = JobStore.AcquireNextTriggers(new DateTimeOffset(DateTime.UtcNow), 20, TimeSpan.FromMilliseconds(1000));
+            var acquiredTriggers = JobStore.AcquireNextTriggers(new DateTimeOffset(DateTime.UtcNow), 20, TimeSpan.FromMilliseconds(1000)).Result;
 
             //act
-            var triggerFiredResult = JobStore.TriggersFired(acquiredTriggers);
+            var triggerFiredResult = JobStore.TriggersFired(acquiredTriggers).Result;
 
             //assert 
             Assert.IsTrue(triggerFiredResult.Count == 4);
@@ -746,7 +747,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.StoreJob(job, false);
             JobStore.StoreTrigger(trigger1, false);
             var jobHashKey = Schema.JobHashKey(job.Key);
-            var acquiredTriggers = JobStore.AcquireNextTriggers(new DateTimeOffset(DateTime.UtcNow), 20, TimeSpan.FromMilliseconds(1000));
+            var acquiredTriggers = JobStore.AcquireNextTriggers(new DateTimeOffset(DateTime.UtcNow), 20, TimeSpan.FromMilliseconds(1000)).Result;
 
             //act
             JobStore.TriggersFired(acquiredTriggers);
@@ -768,7 +769,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.StoreTrigger(trigger, false);
 
             //act
-            var result = JobStore.ReplaceTrigger(new TriggerKey("foo", "bar"), trigger);
+            var result = JobStore.ReplaceTrigger(new TriggerKey("foo", "bar"), trigger).Result;
 
             //assert
             Assert.IsFalse(result);
@@ -790,7 +791,7 @@ namespace QuartzRedisJobStore.UnitTest
             var newTrigger = CreateTrigger("newTrigger", "triggerGroup", job.Key);
 
             //act
-            var result = JobStore.ReplaceTrigger(trigger1.Key, newTrigger);
+            var result = JobStore.ReplaceTrigger(trigger1.Key, newTrigger).Result;
 
             //assert
             Assert.IsTrue(result);
@@ -816,8 +817,8 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.ReplaceTrigger(trigger1.Key, newTrigger);
 
             //assert
-            Assert.IsTrue(JobStore.GetTriggersForJob(job.Key).Count == 2);
-            Assert.IsTrue(JobStore.GetTriggersForJob(job.Key).Select(x => x.Key.Equals(newTrigger.Key)).Any());
+            Assert.IsTrue(JobStore.GetTriggersForJob(job.Key).Result.Count == 2);
+            Assert.IsTrue(JobStore.GetTriggersForJob(job.Key).Result.Select(x => x.Key.Equals(newTrigger.Key)).Any());
         }
 
         /// <summary>

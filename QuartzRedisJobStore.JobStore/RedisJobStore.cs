@@ -110,38 +110,44 @@ namespace QuartzRedisJobStore.JobStore
         /// here we default triggerLockTime out to 5 mins (number in miliseconds)
         /// default redisLockTimeout to 5 secs (number in miliseconds)
         /// </summary>
-        public void Initialize(ITypeLoadHelper loadHelper, ISchedulerSignaler signaler)
+        public Task Initialize(ITypeLoadHelper loadHelper, ISchedulerSignaler signaler, CancellationToken cancellationToken = default(CancellationToken))
         {
             _storeSchema = new RedisJobStoreSchema(KeyPrefix ?? string.Empty, KeyDelimiter ?? ":");
-            _db = ConnectionMultiplexer.Connect(RedisConfiguration).GetDatabase();
+            _db = ConnectionMultiplexer.Connect(RedisConfiguration).GetDatabase(0);
             _storage = new RedisStorage(_storeSchema, _db, signaler, InstanceId, TriggerLockTimeout ?? 300000, RedisLockTimeout ?? 5000);
+
+            return Task.FromResult(0);
         }
 
         /// <summary>
         /// Called by the QuartzScheduler to inform the <see cref="T:Quartz.Spi.IJobStore"/> that
         ///             the scheduler has started.
         /// </summary>
-        public void SchedulerStarted()
+        public Task SchedulerStarted(CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("scheduler has started");
+            return Task.FromResult(0);
         }
 
         /// <summary>
         /// Called by the QuartzScheduler to inform the JobStore that
         ///             the scheduler has been paused.
         /// </summary>
-        public void SchedulerPaused()
+        public Task SchedulerPaused(CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("scheduler has paused");
+            return Task.FromResult(0);
         }
 
         /// <summary>
         /// Called by the QuartzScheduler to inform the JobStore that
         ///             the scheduler has resumed after being paused.
         /// </summary>
-        public void SchedulerResumed()
+        public Task SchedulerResumed(CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("scheduler has resumed");
+
+            return Task.FromResult(0);
         }
 
         /// <summary>
@@ -149,17 +155,19 @@ namespace QuartzRedisJobStore.JobStore
         ///             it should free up all of it's resources because the scheduler is
         ///             shutting down.
         /// </summary>
-        public void Shutdown()
+        public Task Shutdown(CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("scheduler has shutdown");
             _db.Multiplexer.Dispose();
+
+            return Task.FromResult(0);
         }
 
         /// <summary>
         /// Store the given <see cref="T:Quartz.IJobDetail"/> and <see cref="T:Quartz.ITrigger"/>.
         /// </summary>
         /// <param name="newJob">The <see cref="T:Quartz.IJobDetail"/> to be stored.</param><param name="newTrigger">The <see cref="T:Quartz.ITrigger"/> to be stored.</param><throws>ObjectAlreadyExistsException </throws>
-        public void StoreJobAndTrigger(IJobDetail newJob, IOperableTrigger newTrigger)
+        public Task StoreJobAndTrigger(IJobDetail newJob, IOperableTrigger newTrigger, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("StoreJobAndTrigger");
             DoWithLock(() =>
@@ -168,6 +176,8 @@ namespace QuartzRedisJobStore.JobStore
                 _storage.StoreTrigger(newTrigger, false);
             }, "Could store job/trigger");
 
+            return Task.FromResult(0);
+
         }
 
         /// <summary>
@@ -175,11 +185,11 @@ namespace QuartzRedisJobStore.JobStore
         /// </summary>
         /// <param name="groupName"/>
         /// <returns/>
-        public bool IsJobGroupPaused(string groupName)
+        public Task<bool> IsJobGroupPaused(string groupName, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("IsJobGroupPaused");
-            return DoWithLock(() => _storage.IsJobGroupPaused(groupName),
-                              string.Format("Error on IsJobGroupPaused - Group {0}", groupName));
+            return Task.FromResult(DoWithLock(() => _storage.IsJobGroupPaused(groupName),
+                              string.Format("Error on IsJobGroupPaused - Group {0}", groupName)));
         }
 
         /// <summary>
@@ -188,11 +198,11 @@ namespace QuartzRedisJobStore.JobStore
         /// </summary>
         /// <param name="groupName"/>
         /// <returns/>
-        public bool IsTriggerGroupPaused(string groupName)
+        public Task<bool> IsTriggerGroupPaused(string groupName, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("IsTriggerGroupPaused");
-            return DoWithLock(() => _storage.IsTriggerGroupPaused(groupName),
-                              string.Format("Error on IsTriggerGroupPaused - Group {0}", groupName));
+            return Task.FromResult(DoWithLock(() => _storage.IsTriggerGroupPaused(groupName),
+                              string.Format("Error on IsTriggerGroupPaused - Group {0}", groupName)));
         }
 
         /// <summary>
@@ -202,10 +212,12 @@ namespace QuartzRedisJobStore.JobStore
         ///             <see cref="T:Quartz.Spi.IJobStore"/> with the same name and group should be
         ///             over-written.
         ///             </param>
-        public void StoreJob(IJobDetail newJob, bool replaceExisting)
+        public Task StoreJob(IJobDetail newJob, bool replaceExisting, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("StoreJob");
             DoWithLock(() => _storage.StoreJob(newJob, replaceExisting), "Could not store job");
+
+            return Task.FromResult(0);
         }
 
         /// <summary>
@@ -213,7 +225,7 @@ namespace QuartzRedisJobStore.JobStore
         /// </summary>
         /// <param name="triggersAndJobs">jobs and triggers indexed by job</param>
         /// <param name="replace">indicate to repalce the existing ones or not</param>
-        public void StoreJobsAndTriggers(IDictionary<IJobDetail, ISet<ITrigger>> triggersAndJobs, bool replace)
+        public Task StoreJobsAndTriggers(IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>> triggersAndJobs, bool replace, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("StoreJobsAndTriggers");
             foreach (var job in triggersAndJobs)
@@ -229,6 +241,8 @@ namespace QuartzRedisJobStore.JobStore
                 }, "Could store job/trigger");
 
             }
+
+            return Task.FromResult(0);
         }
 
         /// <summary>
@@ -245,11 +259,11 @@ namespace QuartzRedisJobStore.JobStore
         /// <see langword="true"/> if a <see cref="T:Quartz.IJob"/> with the given name and
         ///             group was found and removed from the store.
         /// </returns>
-        public bool RemoveJob(JobKey jobKey)
+        public Task<bool> RemoveJob(JobKey jobKey, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("RemoveJob");
-            return DoWithLock(() => _storage.RemoveJob(jobKey),
-                              "Could not remove a job");
+            return Task.FromResult(DoWithLock(() => _storage.RemoveJob(jobKey),
+                              "Could not remove a job"));
         }
 
         /// <summary>
@@ -257,7 +271,7 @@ namespace QuartzRedisJobStore.JobStore
         /// </summary>
         /// <param name="jobKeys">JobKeys</param>
         /// <returns>succeeds or not</returns>
-        public bool RemoveJobs(IList<JobKey> jobKeys)
+        public Task<bool> RemoveJobs(IReadOnlyCollection<JobKey> jobKeys, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("RemoveJobs");
             bool removed = jobKeys.Count > 0;
@@ -270,7 +284,8 @@ namespace QuartzRedisJobStore.JobStore
                 }, "Error on removing job");
 
             }
-            return removed;
+
+            return Task.FromResult(removed);
         }
 
         /// <summary>
@@ -280,11 +295,11 @@ namespace QuartzRedisJobStore.JobStore
         /// <returns>
         /// The desired <see cref="T:Quartz.IJob"/>, or null if there is no match.
         /// </returns>
-        public IJobDetail RetrieveJob(JobKey jobKey)
+        public Task<IJobDetail> RetrieveJob(JobKey jobKey, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("RetrieveJob");
-            return DoWithLock(() => _storage.RetrieveJob(jobKey),
-                              "Could not retriev job");
+            return Task.FromResult(DoWithLock(() => _storage.RetrieveJob(jobKey),
+                              "Could not retriev job"));
         }
 
         /// <summary>
@@ -293,11 +308,13 @@ namespace QuartzRedisJobStore.JobStore
         /// <param name="newTrigger">The <see cref="T:Quartz.ITrigger"/> to be stored.</param><param name="replaceExisting">If <see langword="true"/>, any <see cref="T:Quartz.ITrigger"/> existing in
         ///             the <see cref="T:Quartz.Spi.IJobStore"/> with the same name and group should
         ///             be over-written.</param><throws>ObjectAlreadyExistsException </throws>
-        public void StoreTrigger(IOperableTrigger newTrigger, bool replaceExisting)
+        public Task StoreTrigger(IOperableTrigger newTrigger, bool replaceExisting, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("StoreTrigger");
             DoWithLock(() => _storage.StoreTrigger(newTrigger, replaceExisting),
                             "Could not store trigger");
+
+            return Task.FromResult(0);
         }
 
         /// <summary>
@@ -319,11 +336,11 @@ namespace QuartzRedisJobStore.JobStore
         /// <see langword="true"/> if a <see cref="T:Quartz.ITrigger"/> with the given
         ///             name and group was found and removed from the store.
         /// </returns>
-        public bool RemoveTrigger(TriggerKey triggerKey)
+        public Task<bool> RemoveTrigger(TriggerKey triggerKey, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("RemoveTrigger");
-            return DoWithLock(() => _storage.RemoveTrigger(triggerKey),
-                              "Could not remove trigger");
+            return Task.FromResult(DoWithLock(() => _storage.RemoveTrigger(triggerKey),
+                              "Could not remove trigger"));
         }
 
         /// <summary>
@@ -331,7 +348,7 @@ namespace QuartzRedisJobStore.JobStore
         /// </summary>
         /// <param name="triggerKeys">Trigger Keys</param>
         /// <returns>succeeds or not</returns>
-        public bool RemoveTriggers(IList<TriggerKey> triggerKeys)
+        public Task<bool> RemoveTriggers(IReadOnlyCollection<TriggerKey> triggerKeys, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("RemoveTriggers");
 
@@ -345,7 +362,7 @@ namespace QuartzRedisJobStore.JobStore
                 }, "Error on removing trigger");
 
             }
-            return removed;
+            return Task.FromResult(removed);
         }
 
         /// <summary>
@@ -358,12 +375,12 @@ namespace QuartzRedisJobStore.JobStore
         /// <see langword="true"/> if a <see cref="T:Quartz.ITrigger"/> with the given
         ///             name and group was found and removed from the store.
         /// </returns>
-        public bool ReplaceTrigger(TriggerKey triggerKey, IOperableTrigger newTrigger)
+        public Task<bool> ReplaceTrigger(TriggerKey triggerKey, IOperableTrigger newTrigger, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("ReplaceTrigger");
 
-            return DoWithLock(() => _storage.ReplaceTrigger(triggerKey, newTrigger),
-                              "Error on replacing trigger");
+            return Task.FromResult(DoWithLock(() => _storage.ReplaceTrigger(triggerKey, newTrigger),
+                              "Error on replacing trigger"));
         }
 
         /// <summary>
@@ -373,12 +390,12 @@ namespace QuartzRedisJobStore.JobStore
         /// The desired <see cref="T:Quartz.ITrigger"/>, or null if there is no
         ///             match.
         /// </returns>
-        public IOperableTrigger RetrieveTrigger(TriggerKey triggerKey)
+        public Task<IOperableTrigger> RetrieveTrigger(TriggerKey triggerKey, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("RetrieveTrigger");
 
-            return DoWithLock(() => _storage.RetrieveTrigger(triggerKey),
-                              "could not retrieve trigger");
+            return Task.FromResult(DoWithLock(() => _storage.RetrieveTrigger(triggerKey),
+                              "could not retrieve trigger"));
         }
 
         /// <summary>
@@ -390,12 +407,12 @@ namespace QuartzRedisJobStore.JobStore
         /// <returns>
         /// true if a calendar exists with the given identifier
         /// </returns>
-        public bool CalendarExists(string calName)
+        public Task<bool> CalendarExists(string calName, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("CalendarExists");
 
-            return DoWithLock(() => _storage.CheckExists(calName),
-                             string.Format("could not check if the calendar {0} exists", calName));
+            return Task.FromResult(DoWithLock(() => _storage.CheckExists(calName),
+                             string.Format("could not check if the calendar {0} exists", calName)));
         }
 
         /// <summary>
@@ -407,11 +424,11 @@ namespace QuartzRedisJobStore.JobStore
         /// <returns>
         /// true if a job exists with the given identifier
         /// </returns>
-        public bool CheckExists(JobKey jobKey)
+        public Task<bool> CheckExists(JobKey jobKey, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("CheckExists - Job");
-            return DoWithLock(() => _storage.CheckExists(jobKey),
-                              string.Format("could not check if the job {0} exists", jobKey));
+            return Task.FromResult(DoWithLock(() => _storage.CheckExists(jobKey),
+                              string.Format("could not check if the job {0} exists", jobKey)));
         }
 
         /// <summary>
@@ -423,11 +440,11 @@ namespace QuartzRedisJobStore.JobStore
         /// <returns>
         /// true if a trigger exists with the given identifier
         /// </returns>
-        public bool CheckExists(TriggerKey triggerKey)
+        public Task<bool> CheckExists(TriggerKey triggerKey, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("CheckExists - Trigger");
-            return DoWithLock(() => _storage.CheckExists(triggerKey),
-                            string.Format("could not check if the trigger {0} exists", triggerKey));
+            return Task.FromResult(DoWithLock(() => _storage.CheckExists(triggerKey),
+                            string.Format("could not check if the trigger {0} exists", triggerKey)));
         }
 
         /// <summary>
@@ -435,10 +452,12 @@ namespace QuartzRedisJobStore.JobStore
         ///             <see cref="T:Quartz.ICalendar"/>s.
         /// </summary>
         /// <remarks/>
-        public void ClearAllSchedulingData()
+        public Task ClearAllSchedulingData(CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("ClearAllSchedulingData");
             DoWithLock(() => _storage.ClearAllSchedulingData(), "Could not clear all the scheduling data");
+
+            return Task.FromResult(0);
         }
 
         /// <summary>
@@ -450,11 +469,13 @@ namespace QuartzRedisJobStore.JobStore
         ///             in the <see cref="T:Quartz.Spi.IJobStore"/> that reference an existing
         ///             Calendar with the same name with have their next fire time
         ///             re-computed with the new <see cref="T:Quartz.ICalendar"/>.</param><throws>ObjectAlreadyExistsException </throws>
-        public void StoreCalendar(string name, ICalendar calendar, bool replaceExisting, bool updateTriggers)
+        public Task StoreCalendar(string name, ICalendar calendar, bool replaceExisting, bool updateTriggers, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("StoreCalendar");
             DoWithLock(() => _storage.StoreCalendar(name, calendar, replaceExisting, updateTriggers),
                        string.Format("Error on store calendar - {0}", name));
+
+            return Task.FromResult(0);
         }
 
         /// <summary>
@@ -471,11 +492,11 @@ namespace QuartzRedisJobStore.JobStore
         /// <see langword="true"/> if a <see cref="T:Quartz.ICalendar"/> with the given name
         ///             was found and removed from the store.
         /// </returns>
-        public bool RemoveCalendar(string calName)
+        public Task<bool> RemoveCalendar(string calName, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("RemoveCalendar");
-            return DoWithLock(() => _storage.RemoveCalendar(calName),
-                       string.Format("Error on remvoing calendar - {0}", calName));
+            return Task.FromResult(DoWithLock(() => _storage.RemoveCalendar(calName),
+                       string.Format("Error on remvoing calendar - {0}", calName)));
         }
 
         /// <summary>
@@ -486,11 +507,11 @@ namespace QuartzRedisJobStore.JobStore
         /// The desired <see cref="T:Quartz.ICalendar"/>, or null if there is no
         ///             match.
         /// </returns>
-        public ICalendar RetrieveCalendar(string calName)
+        public Task<ICalendar> RetrieveCalendar(string calName, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("RetrieveCalendar");
-            return DoWithLock(() => _storage.RetrieveCalendar(calName),
-                              string.Format("Error on retrieving calendar - {0}", calName));
+            return Task.FromResult(DoWithLock(() => _storage.RetrieveCalendar(calName),
+                              string.Format("Error on retrieving calendar - {0}", calName)));
         }
 
         /// <summary>
@@ -498,10 +519,10 @@ namespace QuartzRedisJobStore.JobStore
         ///             stored in the <see cref="T:Quartz.Spi.IJobStore"/>.
         /// </summary>
         /// <returns/>
-        public int GetNumberOfJobs()
+        public Task<int> GetNumberOfJobs(CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("GetNumberOfJobs");
-            return DoWithLock(() => _storage.NumberOfJobs(), "Error on getting Number of jobs");
+            return Task.FromResult(DoWithLock(() => _storage.NumberOfJobs(), "Error on getting Number of jobs"));
         }
 
         /// <summary>
@@ -509,10 +530,10 @@ namespace QuartzRedisJobStore.JobStore
         ///             stored in the <see cref="T:Quartz.Spi.IJobStore"/>.
         /// </summary>
         /// <returns/>
-        public int GetNumberOfTriggers()
+        public Task<int> GetNumberOfTriggers(CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("GetNumberOfTriggers");
-            return DoWithLock(() => _storage.NumberOfTriggers(), "Error on getting number of triggers");
+            return Task.FromResult(DoWithLock(() => _storage.NumberOfTriggers(), "Error on getting number of triggers"));
         }
 
         /// <summary>
@@ -520,10 +541,10 @@ namespace QuartzRedisJobStore.JobStore
         ///             stored in the <see cref="T:Quartz.Spi.IJobStore"/>.
         /// </summary>
         /// <returns/>
-        public int GetNumberOfCalendars()
+        public Task<int> GetNumberOfCalendars(CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("GetNumberOfCalendars");
-            return DoWithLock(() => _storage.NumberOfCalendars(), "Error on getting number of calendars");
+            return Task.FromResult(DoWithLock(() => _storage.NumberOfCalendars(), "Error on getting number of calendars"));
         }
 
         /// <summary>
@@ -536,10 +557,10 @@ namespace QuartzRedisJobStore.JobStore
         /// </summary>
         /// <param name="matcher"/>
         /// <returns/>
-        public ISet<JobKey> GetJobKeys(GroupMatcher<JobKey> matcher)
+        public Task<IReadOnlyCollection<JobKey>> GetJobKeys(GroupMatcher<JobKey> matcher, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("GetJobKeys");
-            return DoWithLock(() => _storage.JobKeys(matcher), "Error on getting job keys");
+            return Task.FromResult(DoWithLock(() => _storage.JobKeys(matcher), "Error on getting job keys"));
         }
 
         /// <summary>
@@ -550,10 +571,10 @@ namespace QuartzRedisJobStore.JobStore
         ///             zero-length array (not <see langword="null"/>).
         /// </para>
         /// </summary>
-        public ISet<TriggerKey> GetTriggerKeys(GroupMatcher<TriggerKey> matcher)
+        public Task<IReadOnlyCollection<TriggerKey>> GetTriggerKeys(GroupMatcher<TriggerKey> matcher, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("GetTriggerKeys");
-            return DoWithLock(() => _storage.TriggerKeys(matcher), "Error on getting trigger keys");
+            return Task.FromResult(DoWithLock(() => _storage.TriggerKeys(matcher), "Error on getting trigger keys"));
         }
 
         /// <summary>
@@ -564,10 +585,10 @@ namespace QuartzRedisJobStore.JobStore
         ///             array (not <see langword="null"/>).
         /// </para>
         /// </summary>
-        public IList<string> GetJobGroupNames()
+        public Task<IReadOnlyCollection<string>> GetJobGroupNames(CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("GetJobGroupNames");
-            return DoWithLock(() => _storage.JobGroupNames(), "Error on getting job group names");
+            return Task.FromResult(DoWithLock(() => _storage.JobGroupNames(), "Error on getting job group names"));
         }
 
         /// <summary>
@@ -578,10 +599,10 @@ namespace QuartzRedisJobStore.JobStore
         ///             array (not <see langword="null"/>).
         /// </para>
         /// </summary>
-        public IList<string> GetTriggerGroupNames()
+        public Task<IReadOnlyCollection<string>> GetTriggerGroupNames(CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("GetTriggerGroupNames");
-            return DoWithLock(() => _storage.TriggerGroupNames(), "Error on getting trigger group names");
+            return Task.FromResult(DoWithLock(() => _storage.TriggerGroupNames(), "Error on getting trigger group names"));
         }
 
         /// <summary>
@@ -592,10 +613,10 @@ namespace QuartzRedisJobStore.JobStore
         ///             a zero-length array (not <see langword="null"/>).
         /// </para>
         /// </summary>
-        public IList<string> GetCalendarNames()
+        public Task<IReadOnlyCollection<string>> GetCalendarNames(CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("GetCalendarNames");
-            return DoWithLock(() => _storage.CalendarNames(), "Error on getting calendar names");
+            return Task.FromResult(DoWithLock(() => _storage.CalendarNames(), "Error on getting calendar names"));
         }
 
         /// <summary>
@@ -604,31 +625,33 @@ namespace QuartzRedisJobStore.JobStore
         /// <remarks>
         /// If there are no matches, a zero-length array should be returned.
         /// </remarks>
-        public IList<IOperableTrigger> GetTriggersForJob(JobKey jobKey)
+        public Task<IReadOnlyCollection<IOperableTrigger>> GetTriggersForJob(JobKey jobKey, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("GetTriggersForJob");
-            return DoWithLock(() => _storage.GetTriggersForJob(jobKey), string.Format("Error on getting triggers for job - {0}", jobKey));
+            return Task.FromResult(DoWithLock(() => _storage.GetTriggersForJob(jobKey), string.Format("Error on getting triggers for job - {0}", jobKey)));
         }
 
         /// <summary>
         /// Get the current state of the identified <see cref="T:Quartz.ITrigger"/>.
         /// </summary>
         /// <seealso cref="T:Quartz.TriggerState"/>
-        public TriggerState GetTriggerState(TriggerKey triggerKey)
+        public Task<TriggerState> GetTriggerState(TriggerKey triggerKey, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("GetTriggerState");
-            return DoWithLock(() => _storage.GetTriggerState(triggerKey),
-                              string.Format("Error on getting trigger state for trigger - {0}", triggerKey));
+            return Task.FromResult(DoWithLock(() => _storage.GetTriggerState(triggerKey),
+                              string.Format("Error on getting trigger state for trigger - {0}", triggerKey)));
         }
 
         /// <summary>
         /// Pause the <see cref="T:Quartz.ITrigger"/> with the given key.
         /// </summary>
-        public void PauseTrigger(TriggerKey triggerKey)
+        public Task PauseTrigger(TriggerKey triggerKey, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("PauseTrigger");
             DoWithLock(() => _storage.PauseTrigger(triggerKey),
                               string.Format("Error on pausing trigger - {0}", triggerKey));
+
+            return Task.FromResult(0);
         }
 
         /// <summary>
@@ -640,20 +663,22 @@ namespace QuartzRedisJobStore.JobStore
         ///             pause on any new triggers that are added to the group while the group is
         ///             paused.
         /// </remarks>
-        public ISet<string> PauseTriggers(GroupMatcher<TriggerKey> matcher)
+        public Task<IReadOnlyCollection<string>> PauseTriggers(GroupMatcher<TriggerKey> matcher, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("PauseTriggers");
-            return DoWithLock(() => new HashSet<string>(_storage.PauseTriggers(matcher)), "Error on pausing triggers");
+            return Task.FromResult(DoWithLock(() => _storage.PauseTriggers(matcher), "Error on pausing triggers"));
         }
 
         /// <summary>
         /// Pause the <see cref="T:Quartz.IJob"/> with the given key - by
         ///             pausing all of its current <see cref="T:Quartz.ITrigger"/>s.
         /// </summary>
-        public void PauseJob(JobKey jobKey)
+        public Task PauseJob(JobKey jobKey, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("PauseJob");
             DoWithLock(() => _storage.PauseJob(jobKey), string.Format("Error on pausing job - {0}", jobKey));
+
+            return Task.FromResult(0);
         }
 
         /// <summary>
@@ -666,10 +691,10 @@ namespace QuartzRedisJobStore.JobStore
         /// </para>
         /// </summary>
         /// <seealso cref="T:System.String"/>
-        public IList<string> PauseJobs(GroupMatcher<JobKey> matcher)
+        public Task<IReadOnlyCollection<string>> PauseJobs(GroupMatcher<JobKey> matcher, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("PauseJobs");
-            return DoWithLock(() => _storage.PauseJobs(matcher), "Error on pausing jobs");
+            return Task.FromResult(DoWithLock(() => _storage.PauseJobs(matcher), "Error on pausing jobs"));
         }
 
         /// <summary>
@@ -681,11 +706,13 @@ namespace QuartzRedisJobStore.JobStore
         /// </para>
         /// </summary>
         /// <seealso cref="T:System.String"/>
-        public void ResumeTrigger(TriggerKey triggerKey)
+        public Task ResumeTrigger(TriggerKey triggerKey, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("ResumeTrigger");
             DoWithLock(() => _storage.ResumeTrigger(triggerKey),
                        string.Format("Error on resuming trigger - {0}", triggerKey));
+
+            return Task.FromResult(0);
         }
 
         /// <summary>
@@ -696,20 +723,20 @@ namespace QuartzRedisJobStore.JobStore
         ///             <see cref="T:Quartz.ITrigger"/>'s misfire instruction will be applied.
         /// </para>
         /// </summary>
-        public IList<string> ResumeTriggers(GroupMatcher<TriggerKey> matcher)
+        public Task<IReadOnlyCollection<string>> ResumeTriggers(GroupMatcher<TriggerKey> matcher, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("ResumeTriggers");
-            return DoWithLock(() => _storage.ResumeTriggers(matcher), "Error on resume triggers");
+            return Task.FromResult(DoWithLock(() => _storage.ResumeTriggers(matcher), "Error on resume triggers"));
         }
 
         /// <summary>
         /// Gets the paused trigger groups.
         /// </summary>
         /// <returns/>
-        public ISet<string> GetPausedTriggerGroups()
+        public Task<IReadOnlyCollection<string>> GetPausedTriggerGroups(CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("GetPausedTriggerGroups");
-            return DoWithLock(() => _storage.GetPausedTriggerGroups(), "Error on getting paused trigger groups");
+            return Task.FromResult(DoWithLock(() => _storage.GetPausedTriggerGroups(), "Error on getting paused trigger groups"));
         }
 
         /// <summary>
@@ -721,10 +748,12 @@ namespace QuartzRedisJobStore.JobStore
         ///             instruction will be applied.
         /// </para>
         /// </summary>
-        public void ResumeJob(JobKey jobKey)
+        public Task ResumeJob(JobKey jobKey, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("ResumeJob");
             DoWithLock(() => _storage.ResumeJob(jobKey), string.Format("Error on resuming job - {0}", jobKey));
+
+            return Task.FromResult(0);
         }
 
         /// <summary>
@@ -736,10 +765,10 @@ namespace QuartzRedisJobStore.JobStore
         ///             misfire instruction will be applied.
         /// </para>
         /// </summary>
-        public ISet<string> ResumeJobs(GroupMatcher<JobKey> matcher)
+        public Task<IReadOnlyCollection<string>> ResumeJobs(GroupMatcher<JobKey> matcher, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("ResumeJobs");
-            return DoWithLock(() => _storage.ResumeJobs(matcher), "Error on resuming jobs");
+            return Task.FromResult(DoWithLock(() => _storage.ResumeJobs(matcher), "Error on resuming jobs"));
         }
 
         /// <summary>
@@ -751,10 +780,12 @@ namespace QuartzRedisJobStore.JobStore
         /// </para>
         /// </summary>
         /// <seealso cref="M:Quartz.Spi.IJobStore.ResumeAll"/>
-        public void PauseAll()
+        public Task PauseAll(CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("PauseAll");
             DoWithLock(() => _storage.PauseAllTriggers(), "Error on pausing all");
+
+            return Task.FromResult(0);
         }
 
         /// <summary>
@@ -766,10 +797,12 @@ namespace QuartzRedisJobStore.JobStore
         /// </para>
         /// </summary>
         /// <seealso cref="M:Quartz.Spi.IJobStore.PauseAll"/>
-        public void ResumeAll()
+        public Task ResumeAll(CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("ResumeAll");
             DoWithLock(() => _storage.ResumeAllTriggers(), "Error on resuming all");
+
+            return Task.FromResult(0);
         }
 
         /// <summary>
@@ -781,11 +814,11 @@ namespace QuartzRedisJobStore.JobStore
         ///             milliseconds.</param><param name="maxCount"/><param name="timeWindow"/>
         /// <returns/>
         /// <seealso cref="T:Quartz.ITrigger"/>
-        public IList<IOperableTrigger> AcquireNextTriggers(DateTimeOffset noLaterThan, int maxCount, TimeSpan timeWindow)
+        public Task<IReadOnlyCollection<IOperableTrigger>> AcquireNextTriggers(DateTimeOffset noLaterThan, int maxCount, TimeSpan timeWindow, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("AcquireNextTriggers");
-            return DoWithLock(() => _storage.AcquireNextTriggers(noLaterThan, maxCount, timeWindow),
-                              "Error on acquiring next triggers");
+            return Task.FromResult(DoWithLock(() => _storage.AcquireNextTriggers(noLaterThan, maxCount, timeWindow),
+                              "Error on acquiring next triggers"));
         }
 
         /// <summary>
@@ -793,10 +826,12 @@ namespace QuartzRedisJobStore.JobStore
         ///             fire the given <see cref="T:Quartz.ITrigger"/>, that it had previously acquired
         ///             (reserved).
         /// </summary>
-        public void ReleaseAcquiredTrigger(IOperableTrigger trigger)
+        public Task ReleaseAcquiredTrigger(IOperableTrigger trigger, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("ReleaseAcquiredTrigger");
             DoWithLock(() => _storage.ReleaseAcquiredTrigger(trigger), string.Format("Error on releasing acquired trigger - {0}", trigger));
+
+            return Task.FromResult(0);
         }
 
         /// <summary>
@@ -810,10 +845,10 @@ namespace QuartzRedisJobStore.JobStore
         ///             state.  Preference is to return an empty list if none of the triggers
         ///             could be fired.
         /// </returns>
-        public IList<TriggerFiredResult> TriggersFired(IList<IOperableTrigger> triggers)
+        public Task<IReadOnlyCollection<TriggerFiredResult>> TriggersFired(IReadOnlyCollection<IOperableTrigger> triggers, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("TriggersFired");
-            return DoWithLock(() => _storage.TriggersFired(triggers), "Error on Triggers Fired");
+            return Task.FromResult(DoWithLock(() => _storage.TriggersFired(triggers), "Error on Triggers Fired"));
         }
 
         /// <summary>
@@ -823,11 +858,13 @@ namespace QuartzRedisJobStore.JobStore
         ///             in the given <see cref="T:Quartz.IJobDetail"/> should be updated if the <see cref="T:Quartz.IJob"/>
         ///             is stateful.
         /// </summary>
-        public void TriggeredJobComplete(IOperableTrigger trigger, IJobDetail jobDetail, SchedulerInstruction triggerInstCode)
+        public Task TriggeredJobComplete(IOperableTrigger trigger, IJobDetail jobDetail, SchedulerInstruction triggerInstCode, CancellationToken cancellationToken = default(CancellationToken))
         {
             _logger.Info("TriggeredJobComplete");
             DoWithLock(() => _storage.TriggeredJobComplete(trigger, jobDetail, triggerInstCode),
                        string.Format("Error on triggered job complete - job:{0} - trigger:{1}", jobDetail, trigger));
+
+            return Task.FromResult(0);
         }
 
 
@@ -890,255 +927,7 @@ namespace QuartzRedisJobStore.JobStore
             }
         }
 
-        public Task Initialize(ITypeLoadHelper loadHelper, ISchedulerSignaler signaler, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task SchedulerStarted(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task SchedulerPaused(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task SchedulerResumed(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task Shutdown(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task StoreJobAndTrigger(IJobDetail newJob, IOperableTrigger newTrigger, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> IsJobGroupPaused(string groupName, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> IsTriggerGroupPaused(string groupName, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task StoreJob(IJobDetail newJob, bool replaceExisting, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task StoreJobsAndTriggers(IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>> triggersAndJobs, bool replace, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> RemoveJob(JobKey jobKey, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> RemoveJobs(IReadOnlyCollection<JobKey> jobKeys, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IJobDetail> RetrieveJob(JobKey jobKey, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task StoreTrigger(IOperableTrigger newTrigger, bool replaceExisting, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> RemoveTrigger(TriggerKey triggerKey, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> RemoveTriggers(IReadOnlyCollection<TriggerKey> triggerKeys, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> ReplaceTrigger(TriggerKey triggerKey, IOperableTrigger newTrigger, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IOperableTrigger> RetrieveTrigger(TriggerKey triggerKey, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> CalendarExists(string calName, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> CheckExists(JobKey jobKey, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> CheckExists(TriggerKey triggerKey, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task ClearAllSchedulingData(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task StoreCalendar(string name, ICalendar calendar, bool replaceExisting, bool updateTriggers, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<bool> RemoveCalendar(string calName, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<ICalendar> RetrieveCalendar(string calName, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<int> GetNumberOfJobs(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<int> GetNumberOfTriggers(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<int> GetNumberOfCalendars(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IReadOnlyCollection<JobKey>> GetJobKeys(GroupMatcher<JobKey> matcher, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IReadOnlyCollection<TriggerKey>> GetTriggerKeys(GroupMatcher<TriggerKey> matcher, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IReadOnlyCollection<string>> GetJobGroupNames(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IReadOnlyCollection<string>> GetTriggerGroupNames(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IReadOnlyCollection<string>> GetCalendarNames(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IReadOnlyCollection<IOperableTrigger>> GetTriggersForJob(JobKey jobKey, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<TriggerState> GetTriggerState(TriggerKey triggerKey, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task PauseTrigger(TriggerKey triggerKey, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IReadOnlyCollection<string>> PauseTriggers(GroupMatcher<TriggerKey> matcher, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task PauseJob(JobKey jobKey, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IReadOnlyCollection<string>> PauseJobs(GroupMatcher<JobKey> matcher, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task ResumeTrigger(TriggerKey triggerKey, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IReadOnlyCollection<string>> ResumeTriggers(GroupMatcher<TriggerKey> matcher, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IReadOnlyCollection<string>> GetPausedTriggerGroups(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task ResumeJob(JobKey jobKey, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IReadOnlyCollection<string>> ResumeJobs(GroupMatcher<JobKey> matcher, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task PauseAll(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task ResumeAll(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IReadOnlyCollection<IOperableTrigger>> AcquireNextTriggers(DateTimeOffset noLaterThan, int maxCount, TimeSpan timeWindow, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task ReleaseAcquiredTrigger(IOperableTrigger trigger, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IReadOnlyCollection<TriggerFiredResult>> TriggersFired(IReadOnlyCollection<IOperableTrigger> triggers, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task TriggeredJobComplete(IOperableTrigger trigger, IJobDetail jobDetail, SchedulerInstruction triggerInstCode, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            throw new NotImplementedException();
-        }
+        
 
         #endregion
 
