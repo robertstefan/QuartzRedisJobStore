@@ -146,8 +146,8 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.RemoveTrigger(trigger1.Key);
 
             //assert
-            Assert.IsNull(JobStore.RetrieveTrigger(trigger1.Key));
-            Assert.IsNotNull(JobStore.RetrieveJob(trigger1.JobKey));
+            Assert.IsNull(JobStore.RetrieveTrigger(trigger1.Key).Result);
+            Assert.IsNotNull(JobStore.RetrieveJob(trigger1.JobKey).Result);
         }
 
         /// <summary>
@@ -172,9 +172,9 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.RemoveTrigger(trigger2.Key);
 
             //assert
-            Assert.IsNull(JobStore.RetrieveTrigger(trigger1.Key));
-            Assert.IsNull(JobStore.RetrieveTrigger(trigger2.Key));
-            Assert.IsNull(JobStore.RetrieveJob(trigger1.JobKey));
+            Assert.IsNull(JobStore.RetrieveTrigger(trigger1.Key).Result);
+            Assert.IsNull(JobStore.RetrieveTrigger(trigger2.Key).Result);
+            Assert.IsNull(JobStore.RetrieveJob(trigger1.JobKey).Result);
         }
 
         /// <summary>
@@ -204,9 +204,9 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.RemoveTrigger(trigger2.Key);
 
             //assert
-            Assert.IsNull(JobStore.RetrieveTrigger(trigger1.Key));
-            Assert.IsNull(JobStore.RetrieveTrigger(trigger2.Key));
-            Assert.IsNotNull(JobStore.RetrieveJob(trigger1.JobKey));
+            Assert.IsNull(JobStore.RetrieveTrigger(trigger1.Key).Result);
+            Assert.IsNull(JobStore.RetrieveTrigger(trigger2.Key).Result);
+            Assert.IsNotNull(JobStore.RetrieveJob(trigger1.JobKey).Result);
         }
 
         /// <summary>
@@ -240,10 +240,10 @@ namespace QuartzRedisJobStore.UnitTest
         {
             //arrange
             var jobsAndTriggers = CreateJobsAndTriggers(2, 1, 1, 2);
-            JobStore.StoreJobsAndTriggers(jobsAndTriggers as IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>>, false);
+            JobStore.StoreJobsAndTriggers(jobsAndTriggers, false);
 
             //act
-            var result = JobStore.GetNumberOfTriggers();
+            var result = JobStore.GetNumberOfTriggers().Result;
 
             //assert
             Assert.AreEqual(result, 4);
@@ -340,7 +340,7 @@ namespace QuartzRedisJobStore.UnitTest
         {
             //arrange
             var jobsAndTriggers = CreateJobsAndTriggers(2, 1, 1, 2);
-            JobStore.StoreJobsAndTriggers((IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>>)jobsAndTriggers, false);
+            JobStore.StoreJobsAndTriggers(jobsAndTriggers, false);
 
             //act
             var result = JobStore.GetTriggerGroupNames().Result;
@@ -363,7 +363,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.StoreTrigger(trigger, false);
 
             //assert
-            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger.Key));
+            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger.Key).Result);
         }
 
         /// <summary>
@@ -386,8 +386,8 @@ namespace QuartzRedisJobStore.UnitTest
             //assert
             Assert.IsTrue(pausedGroups.Count == 1);
 
-            Assert.AreEqual(TriggerState.Paused, JobStore.GetTriggerState(new TriggerKey("trigger3", "triggerfoobarGroup1")));
-            Assert.AreEqual(TriggerState.Paused, JobStore.GetTriggerState(new TriggerKey("trigger4", "triggerfoobarGroup1")));
+            Assert.AreEqual(TriggerState.Paused, JobStore.GetTriggerState(new TriggerKey("trigger3", "triggerfoobarGroup1")).Result);
+            Assert.AreEqual(TriggerState.Paused, JobStore.GetTriggerState(new TriggerKey("trigger4", "triggerfoobarGroup1")).Result);
         }
 
         /// <summary>
@@ -410,8 +410,8 @@ namespace QuartzRedisJobStore.UnitTest
             //assert
             Assert.IsTrue(pausedGroups.Count == 1);
 
-            Assert.AreEqual(TriggerState.Paused, JobStore.GetTriggerState(new TriggerKey("trigger3", "triggerfoobarGroup1")));
-            Assert.AreEqual(TriggerState.Paused, JobStore.GetTriggerState(new TriggerKey("trigger4", "triggerfoobarGroup1")));
+            Assert.AreEqual(TriggerState.Paused, JobStore.GetTriggerState(new TriggerKey("trigger3", "triggerfoobarGroup1")).Result);
+            Assert.AreEqual(TriggerState.Paused, JobStore.GetTriggerState(new TriggerKey("trigger4", "triggerfoobarGroup1")).Result);
         }
 
         /// <summary>
@@ -434,8 +434,8 @@ namespace QuartzRedisJobStore.UnitTest
             //assert
             Assert.IsTrue(pausedGroups.Count == 1);
 
-            Assert.AreEqual(TriggerState.Paused, JobStore.GetTriggerState(new TriggerKey("trigger3", "triggerfoobarGroup1")));
-            Assert.AreEqual(TriggerState.Paused, JobStore.GetTriggerState(new TriggerKey("trigger4", "triggerfoobarGroup1")));
+            Assert.AreEqual(TriggerState.Paused, JobStore.GetTriggerState(new TriggerKey("trigger3", "triggerfoobarGroup1")).Result);
+            Assert.AreEqual(TriggerState.Paused, JobStore.GetTriggerState(new TriggerKey("trigger4", "triggerfoobarGroup1")).Result);
         }
 
         /// <summary>
@@ -458,8 +458,8 @@ namespace QuartzRedisJobStore.UnitTest
             //assert
             Assert.IsTrue(pausedGroups.Count == 1);
 
-            Assert.AreEqual(TriggerState.Paused, JobStore.GetTriggerState(new TriggerKey("trigger3", "triggerfoobarGroup1")));
-            Assert.AreEqual(TriggerState.Paused, JobStore.GetTriggerState(new TriggerKey("trigger4", "triggerfoobarGroup1")));
+            Assert.AreEqual(TriggerState.Paused, JobStore.GetTriggerState(new TriggerKey("trigger3", "triggerfoobarGroup1")).Result);
+            Assert.AreEqual(TriggerState.Paused, JobStore.GetTriggerState(new TriggerKey("trigger4", "triggerfoobarGroup1")).Result);
         }
 
         /// <summary>
@@ -479,7 +479,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.ResumeTrigger(trigger.Key);
 
             //assert
-            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger.Key));
+            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger.Key).Result);
         }
 
         /// <summary>
@@ -509,8 +509,8 @@ namespace QuartzRedisJobStore.UnitTest
 
             //assert
             Assert.IsTrue(resumedGroups.Count == 1);
-            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger1.Key));
-            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger2.Key));
+            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger1.Key).Result);
+            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger2.Key).Result);
         }
 
         /// <summary>
@@ -540,8 +540,8 @@ namespace QuartzRedisJobStore.UnitTest
 
             //assert
             Assert.IsTrue(resumedGroups.Count == 1);
-            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger1.Key));
-            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger2.Key));
+            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger1.Key).Result);
+            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger2.Key).Result);
         }
 
         /// <summary>
@@ -571,8 +571,8 @@ namespace QuartzRedisJobStore.UnitTest
 
             //assert
             Assert.IsTrue(resumedGroups.Count == 1);
-            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger3.Key));
-            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger4.Key));
+            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger3.Key).Result);
+            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger4.Key).Result);
         }
 
         /// <summary>
@@ -602,8 +602,8 @@ namespace QuartzRedisJobStore.UnitTest
 
             //assert
             Assert.IsTrue(resumedGroups.Count == 1);
-            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger3.Key));
-            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger4.Key));
+            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger3.Key).Result);
+            Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger4.Key).Result);
         }
 
         /// <summary>
@@ -636,7 +636,7 @@ namespace QuartzRedisJobStore.UnitTest
         {
             //arrange
             var jobsAndTriggers = CreateJobsAndTriggers(2, 2, 2, 2);
-            JobStore.StoreJobsAndTriggers((IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>>)jobsAndTriggers, false);
+            JobStore.StoreJobsAndTriggers(jobsAndTriggers, false);
 
             //act
             JobStore.PauseAll();
@@ -646,7 +646,7 @@ namespace QuartzRedisJobStore.UnitTest
             {
                 foreach (var trigger in jobAndTriggers.Value)
                 {
-                    Assert.AreEqual(TriggerState.Paused, JobStore.GetTriggerState(trigger.Key));
+                    Assert.AreEqual(TriggerState.Paused, JobStore.GetTriggerState(trigger.Key).Result);
                 }
             }
 
@@ -660,7 +660,7 @@ namespace QuartzRedisJobStore.UnitTest
         {
             //arrange
             var jobsAndTriggers = CreateJobsAndTriggers(2, 1, 1, 2);
-            JobStore.StoreJobsAndTriggers((IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>> )jobsAndTriggers, false);
+            JobStore.StoreJobsAndTriggers(jobsAndTriggers, false);
             JobStore.PauseAll();
 
             //act
@@ -671,7 +671,7 @@ namespace QuartzRedisJobStore.UnitTest
             {
                 foreach (var trigger in jobAndTriggers.Value)
                 {
-                    Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger.Key));
+                    Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger.Key).Result);
                 }
             }
         }
@@ -699,9 +699,9 @@ namespace QuartzRedisJobStore.UnitTest
             Assert.IsTrue(acquiredTriggers.Count == 4);
             foreach (var trigger in acquiredTriggers)
             {
-                Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger.Key));
+                Assert.AreEqual(TriggerState.Normal, JobStore.GetTriggerState(trigger.Key).Result);
                 var triggerHashKey = Schema.TriggerHashkey(trigger.Key);
-                Assert.IsTrue(Db.SortedSetScore(Schema.TriggerStateSetKey(RedisTriggerState.Acquired), triggerHashKey) > 0);
+                Assert.IsTrue(Db.SortedSetScore(Schema.TriggerStateSetKey(RedisTriggerState.Acquired), triggerHashKey).Value > 0);
             }
         }
 
@@ -795,7 +795,7 @@ namespace QuartzRedisJobStore.UnitTest
 
             //assert
             Assert.IsTrue(result);
-            Assert.IsNull(JobStore.RetrieveTrigger(trigger1.Key));
+            Assert.IsNull(JobStore.RetrieveTrigger(trigger1.Key).Result);
         }
 
         /// <summary>
@@ -836,7 +836,7 @@ namespace QuartzRedisJobStore.UnitTest
 
             //act
             JobStore.ReplaceTrigger(trigger1.Key, newTrigger);
-            var result = JobStore.RetrieveJob(job.Key);
+            var result = JobStore.RetrieveJob(job.Key).Result;
 
             //assert
             Assert.IsNotNull(result);

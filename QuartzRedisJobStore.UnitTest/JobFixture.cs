@@ -172,7 +172,7 @@ namespace QuartzRedisJobStore.UnitTest
         {
             //arrange
             var jobsAndTriggers = CreateJobsAndTriggers(2, 1, 1, 1);
-            JobStore.StoreJobsAndTriggers(jobsAndTriggers as IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>>, true);
+            JobStore.StoreJobsAndTriggers(jobsAndTriggers, true);
 
             //act
             var result = JobStore.RemoveJobs((from job in jobsAndTriggers.Keys select job.Key).ToList()).Result;
@@ -320,8 +320,9 @@ namespace QuartzRedisJobStore.UnitTest
         public void PauseJobs_UseEqualOperator_Successfully()
         {
             //arrange
-            var jobsAndTriggers = CreateJobsAndTriggers(2, 1, 1, 2);
-            JobStore.StoreJobsAndTriggers(jobsAndTriggers as IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>>, false);
+            IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>> jobsAndTriggers = CreateJobsAndTriggers(2, 1, 1, 2);
+
+            JobStore.StoreJobsAndTriggers(jobsAndTriggers, false);
             var pausedGroup = jobsAndTriggers.First().Key.Key.Group;
 
             //act
@@ -446,10 +447,10 @@ namespace QuartzRedisJobStore.UnitTest
         {
             //arrange
             var jobsAndTriggers = CreateJobsAndTriggers(2, 2, 2, 2);
-            JobStore.StoreJobsAndTriggers(jobsAndTriggers as IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>>, false);
+            JobStore.StoreJobsAndTriggers(jobsAndTriggers, false);
             var pausedGroup = jobsAndTriggers.Keys.First().Key.Group;
             JobStore.PauseJobs(GroupMatcher<JobKey>.GroupEquals(pausedGroup));
-            ISet<ITrigger> triggers = new HashSet<ITrigger>();
+            IReadOnlyCollection<ITrigger> triggers = new HashSet<ITrigger>();
             jobsAndTriggers.TryGetValue(jobsAndTriggers.Keys.First(), out triggers);
 
             //act
@@ -474,10 +475,10 @@ namespace QuartzRedisJobStore.UnitTest
         {
             //arrange
             var jobsAndTriggers = CreateJobsAndTriggers(2, 2, 2, 2);
-            JobStore.StoreJobsAndTriggers(jobsAndTriggers as IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>>, false);
+            JobStore.StoreJobsAndTriggers(jobsAndTriggers, false);
 
             JobStore.PauseJobs(GroupMatcher<JobKey>.GroupEndsWith("_1"));
-            ISet<ITrigger> triggers = new HashSet<ITrigger>();
+            IReadOnlyCollection<ITrigger> triggers = new HashSet<ITrigger>();
             jobsAndTriggers.TryGetValue(jobsAndTriggers.Keys.First(), out triggers);
 
             //act
@@ -501,7 +502,7 @@ namespace QuartzRedisJobStore.UnitTest
         {
             //arrange
             var jobsAndTriggers = CreateJobsAndTriggers(2, 1, 1, 1);
-            JobStore.StoreJobsAndTriggers(jobsAndTriggers as IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>>, false);
+            JobStore.StoreJobsAndTriggers(jobsAndTriggers, false);
             JobStore.PauseJobs(GroupMatcher<JobKey>.GroupStartsWith("jobGroup_"));
 
             //act
@@ -519,7 +520,7 @@ namespace QuartzRedisJobStore.UnitTest
         {
             //arrange
             var jobsAndTriggers = CreateJobsAndTriggers(2, 2, 2, 2);
-            JobStore.StoreJobsAndTriggers(jobsAndTriggers as IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>>, false);
+            JobStore.StoreJobsAndTriggers(jobsAndTriggers, false);
             JobStore.PauseJobs(GroupMatcher<JobKey>.GroupContains("_"));
 
             //act

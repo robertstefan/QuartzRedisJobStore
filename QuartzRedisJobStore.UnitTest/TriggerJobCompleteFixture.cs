@@ -66,7 +66,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.TriggeredJobComplete(_trigger1, _job, SchedulerInstruction.DeleteTrigger);
 
             //assert
-            Assert.IsNull(JobStore.RetrieveTrigger(_trigger1.Key));
+            Assert.IsNull(JobStore.RetrieveTrigger(_trigger1.Key).Result);
 
             MockedSignaler.Verify(x => x.SignalSchedulingChange(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()));
         }
@@ -81,7 +81,7 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.TriggeredJobComplete(_trigger1, _job, SchedulerInstruction.SetTriggerError);
 
             //assert
-            Assert.AreEqual(TriggerState.Error, JobStore.GetTriggerState(_trigger1.Key));
+            Assert.AreEqual(TriggerState.Error, JobStore.GetTriggerState(_trigger1.Key).Result);
             MockedSignaler.Verify(x => x.SignalSchedulingChange(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()));
         }
 
@@ -95,8 +95,8 @@ namespace QuartzRedisJobStore.UnitTest
             JobStore.TriggeredJobComplete(_trigger1, _job, SchedulerInstruction.SetAllJobTriggersError);
 
             //assert
-            Assert.AreEqual(TriggerState.Error, JobStore.GetTriggerState(_trigger1.Key));
-            Assert.AreEqual(TriggerState.Error, JobStore.GetTriggerState(_trigger2.Key));
+            Assert.AreEqual(TriggerState.Error, JobStore.GetTriggerState(_trigger1.Key).Result);
+            Assert.AreEqual(TriggerState.Error, JobStore.GetTriggerState(_trigger2.Key).Result);
             MockedSignaler.Verify(x => x.SignalSchedulingChange(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()));
         }
 
@@ -107,11 +107,12 @@ namespace QuartzRedisJobStore.UnitTest
         public void TrigggeredJobComplete_SetInstructionToAllJobTriggersComplete_TriggersSetoCompleteState()
         {
             //act
-            JobStore.TriggeredJobComplete(_trigger1, _job, SchedulerInstruction.SetAllJobTriggersComplete);
+            JobStore.TriggeredJobComplete(_trigger1, _job, SchedulerInstruction.SetAllJobTriggersComplete).GetAwaiter().GetResult();
 
             //assert
-            Assert.AreEqual(TriggerState.Complete, JobStore.GetTriggerState(_trigger1.Key));
-            Assert.AreEqual(TriggerState.Complete, JobStore.GetTriggerState(_trigger2.Key));
+            Assert.AreEqual(TriggerState.Complete, JobStore.GetTriggerState(_trigger1.Key).Result);
+            Assert.AreEqual(TriggerState.Complete, JobStore.GetTriggerState(_trigger2.Key).Result);
+
             MockedSignaler.Verify(x => x.SignalSchedulingChange(It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()));
         }
 

@@ -163,7 +163,7 @@ namespace QuartzRedisJobStore.UnitTest
         /// <param name="job">IJobDetail</param>
         /// <param name="triggers">Triggers</param>
         protected void StoreJobAndTriggers(IJobDetail job, ISet<ITrigger> triggers) {
-            IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>> dictionary = new Dictionary<IJobDetail, IReadOnlyCollection<ITrigger>> {{job, new ReadOnlyCollection<ITrigger>(triggers) }};
+            Dictionary<IJobDetail, IReadOnlyCollection<ITrigger>> dictionary = new Dictionary<IJobDetail, IReadOnlyCollection<ITrigger>> {{job, new ReadOnlyCollection<ITrigger>(new List<ITrigger>((HashSet<ITrigger>)triggers)) }};
 
             JobStore.StoreJobsAndTriggers(dictionary, true);
         }
@@ -177,11 +177,11 @@ namespace QuartzRedisJobStore.UnitTest
         /// <param name="triggersPerGroup">number of triggers per group</param>
         /// <param name="cronExpression">unix cron expression</param>
         /// <returns>jobs and triggers</returns>
-        protected static IDictionary<IJobDetail, ISet<ITrigger>> CreateJobsAndTriggers(int jobGroups, int jobsPerGroup, int triggerGroupsPerJob,
+        protected static IReadOnlyDictionary<IJobDetail, IReadOnlyCollection<ITrigger>> CreateJobsAndTriggers(int jobGroups, int jobsPerGroup, int triggerGroupsPerJob,
                                              int triggersPerGroup, string cronExpression = "")
         {
 
-            var jobsAndTriggers = new Dictionary<IJobDetail, ISet<ITrigger>>();
+            var jobsAndTriggers = new Dictionary<IJobDetail, IReadOnlyCollection<ITrigger>>();
 
             for (int g = 0; g < jobGroups; g++)
             {
